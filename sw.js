@@ -14,7 +14,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;      // বাইরের সব রিকুয়েস্ট সরাসরি নেটওয়ার্কে
-  if (/admin/i.test(url.pathname)) return;                                   // অ্যাডমিন পেজ কখনও ক্যাশ নয়
+  if (/lifeapp/i.test(url.pathname)) return;                                   // অ্যাডমিন পেজ কখনও ক্যাশ নয়
   if (req.mode === 'navigate') {                                             // পেজ: আগে নেটওয়ার্ক, না পেলে ক্যাশ/অফলাইন
     e.respondWith(fetch(req).then(r => {
       if (r.ok) { const cp = r.clone(); caches.open(VER).then(c => c.put(req, cp)); }
