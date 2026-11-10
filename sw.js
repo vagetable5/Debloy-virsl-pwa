@@ -1,6 +1,6 @@
 // sw.js — Service Worker (PWA)
 // নিয়ম: শুধু নিজের সাইটের ফাইল ক্যাশ হয়। Supabase (লগইন/ডেটা), বিজ্ঞাপন, admin.html কখনও ক্যাশ হয় না।
-const VER = 'vv-v1';
+const VER = 'vv-v2';
 const SHELL = ['./', 'index.html', 'post.html', 'info.html', 'offline.html', 'config.js', 'maint.js', 'theme.css', 'pwa.js',
   'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
