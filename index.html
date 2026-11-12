@@ -72,6 +72,7 @@ nav button.on{background:linear-gradient(135deg,var(--p),var(--g));color:#fff;bo
 .mb a{color:var(--g)}
 @media(max-width:420px){#gr{gap:8px}}
 .fl{max-width:980px;margin:18px auto 0;padding:16px 12px;border-top:1px solid var(--bd);text-align:center;color:#889;font-size:12px}.fl a{color:#aab;text-decoration:none;display:inline-block;margin:4px 8px;font-size:13px}.fl a:hover{color:var(--g)}.fl p{margin-top:8px;line-height:1.6}
+#fl{display:flex;gap:8px;margin:10px 0 2px;overflow-x:auto}#fl button{flex:none;background:var(--c);color:#aaa;border:1px solid var(--bd);border-radius:20px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}#fl button.on{background:linear-gradient(135deg,var(--p),var(--g));color:#fff;border:0}
 </style>
 <link rel="stylesheet" href="theme.css">
 </head>
@@ -80,6 +81,7 @@ nav button.on{background:linear-gradient(135deg,var(--p),var(--g));color:#fff;bo
 <div class="tk"><span id="tk"></span></div>
 <div class="wrap"><input id="q" placeholder="🔍 টাইটেল বা ট্যাগ লিখে সার্চ করুন..." autocomplete="off"></div>
 <nav id="nv"></nav>
+<div class="wrap"><div id="fl"></div></div>
 <div class="wrap">
 <div class="adbox" id="adb"></div>
 <div id="bn"></div>
@@ -93,8 +95,8 @@ nav button.on{background:linear-gradient(135deg,var(--p),var(--g));color:#fff;bo
 <div class="ov" id="pop"><div class="mb"><button class="x" onclick="cl('pop')">×</button><a id="pa" target="_blank" rel="noopener"><img id="pi" style="width:100%;border-radius:10px"></a></div></div>
 <script>
 const sb=supabase.createClient(CFG.U,CFG.K),$=i=>document.getElementById(i),cl=i=>$(i).classList.remove('on'),R=b=>Promise.resolve(b);
-let S={},page=1,cat='home',q='',prof=null,LR=0;
-const PER=10,COLS='id,title,thumb,type,category,views,created_at';
+let S={},page=1,cat='home',q='',prof=null,LR=0,srt='new';
+const PER=10,COLS='id,title,thumb,type,category,views,created_at,pinned';
 const NV=[['home','হোম','🏠'],['video','ভিডিও','🎬'],['photo','ফটো','🖼️'],['story','গল্প','📖'],['viral','ভাইরাল','🔥'],['premium','প্রিমিয়াম','👑']];
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function ago(d){const s=(Date.now()-new Date(d))/1000,u=[[31536e3,'year'],[2592e3,'month'],[86400,'day'],[3600,'hour'],[60,'minute']];for(const[n,l]of u)if(s>=n){const v=Math.floor(s/n);return v+' '+l+(v>1?'s':'')+' ago'}return 'just now'}
@@ -127,12 +129,14 @@ ads(pA);
 async function me(){const{data:{session}}=await sb.auth.getSession();prof=null;if(session)prof=(await sb.from('profiles').select('*').eq('id',session.user.id).single()).data;
 $('au').textContent=session?'Logout ('+(prof?.status||'')+')':'Login / Register';
 $('au').onclick=()=>session?sb.auth.signOut().then(()=>location.reload()):showForm()}
-function nav(){$('nv').innerHTML=NV.map(([k,l,ic])=>`<button class="${k==cat?'on':''}" onclick="cat='${k}';q='';$('q').value='';page=1;nav();load()"><i>${ic}</i>${l}</button>`).join('');$('sh').textContent=q?'🔍 সার্চ রেজাল্ট: '+q:(()=>{const n=NV.find(n=>n[0]==cat)||[];return (n[2]||'')+' '+(n[1]||'')})()}
+const FL=[['new','🆕 নিউ পোস্ট'],['views','👁 মোস্ট ভিউ'],['old','🕰️ ওল্ড পোস্ট']];
+function fl(){$('fl').innerHTML=FL.map(([k,l])=>`<button class="${k==srt?'on':''}" onclick="srt='${k}';page=1;fl();load()">${l}</button>`).join('')}
+function nav(){fl();$('nv').innerHTML=NV.map(([k,l,ic])=>`<button class="${k==cat?'on':''}" onclick="cat='${k}';q='';$('q').value='';page=1;nav();load()"><i>${ic}</i>${l}</button>`).join('');$('sh').textContent=q?'🔍 সার্চ রেজাল্ট: '+q:(()=>{const n=NV.find(n=>n[0]==cat)||[];return (n[2]||'')+' '+(n[1]||'')})()}
 const go=id=>location.href='post.html?v='+encodeURIComponent(id);
 function paint(data,count){
 $('gr').innerHTML=(data||[]).map(p=>`<div class="cd" role="button" tabindex="0" onclick="go(${Number(p.id)})" onkeydown="if(event.key==='Enter'){go(${Number(p.id)})}">
 ${p.thumb?`<img src="${esc(p.thumb)}" loading="lazy" decoding="async" alt="${esc(p.title)}">`:''}
-<div class="i"><h3>${p.type==='premium'?'🔒 ':''}${esc(p.title)}</h3><small>${ago(p.created_at)} • 👁 ${Number(p.views||0)}</small><button class="b" onclick="event.stopPropagation();go(${Number(p.id)})">${p.category==='video'?'▶ Watch':'⬇ Download'}</button></div></div>`).join('')||'<p style="grid-column:1/3;text-align:center;color:#889">কিছু নেই</p>';
+<div class="i"><h3>${p.pinned?'📌 ':''}${p.type==='premium'?'🔒 ':''}${esc(p.title)}</h3><small>${ago(p.created_at)} • 👁 ${Number(p.views||0)}</small><button class="b" onclick="event.stopPropagation();go(${Number(p.id)})">${p.category==='video'?'▶ Watch':'⬇ Download'}</button></div></div>`).join('')||'<p style="grid-column:1/3;text-align:center;color:#889">কিছু নেই</p>';
 const n=Math.ceil((count||0)/PER);let h='';
 const go2=i=>`onclick="page=${i};load();scrollTo(0,0)"`;
 if(page>1)h+=`<button ${go2(page-1)}>« Prev</button>`;
@@ -141,12 +145,15 @@ if(page<n)h+=`<button ${go2(page+1)}>Next »</button>`;
 $('pg').innerHTML=h;
 }
 async function load(){
-const rid=++LR,key='pl:'+cat+':'+page;let shown=false;
+const rid=++LR,key='pl:'+cat+':'+srt+':'+page;let shown=false;
 if(q&&q.replace(/[\s,#]+/g,'').length<2){$('gr').innerHTML='<p style="grid-column:1/3;text-align:center;color:#889">সার্চের জন্য কমপক্ষে ২ অক্ষর লিখুন</p>';$('pg').innerHTML='';return}
 // আগে দেখা লিস্ট থাকলে সাথে সাথে দেখাই, পেছনে নতুন ডেটা আনি
 if(!q){try{const c=sessionStorage.getItem(key);if(c){const j=JSON.parse(c);paint(j.d,j.c);shown=true}}catch(e){}}
 if(!shown)$('gr').innerHTML='<p style="grid-column:1/3;text-align:center;color:#889">লোড হচ্ছে...</p>';
-let r=sb.from('posts').select(COLS,{count:'exact'}).order('created_at',{ascending:false}).range((page-1)*PER,page*PER-1);
+let r=sb.from('posts').select(COLS,{count:'exact'});
+if(!q&&cat==='home')r=r.order('pinned',{ascending:false}).order('pinned_at',{ascending:false,nullsFirst:false});
+r=srt==='views'?r.order('views',{ascending:false}).order('created_at',{ascending:false}):srt==='old'?r.order('created_at',{ascending:true}):r.order('created_at',{ascending:false});
+r=r.range((page-1)*PER,page*PER-1);
 if(!q)r=cat==='home'?r.neq('type','premium'):cat==='viral'?r.eq('type','viral'):cat==='premium'?r.eq('type','premium'):r.eq('category',cat).neq('type','premium');
 else q.split(/[\s,#]+/).map(w=>w.replace(/[%*(),.:"'\\_]/g,'')).filter(Boolean).slice(0,5).forEach(w=>{r=r.or(`title.ilike.%${w}%,tags.ilike.%${w}%`)});
 const{data,count,error}=await r;
