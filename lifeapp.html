@@ -24,13 +24,14 @@ small{color:var(--mu)}.bd{display:inline-block;padding:1px 8px;border-radius:10p
 .st{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.st div{background:var(--c);border:1px solid var(--bd);border-radius:12px;padding:12px;text-align:center}.st b{display:block;font-size:20px;color:var(--ac)}
 #pv{max-width:150px;border-radius:8px;margin-top:6px;display:none}
 .c{display:none}.c.on{display:block}
+.vr{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--bd)}.vr small{width:84px;flex:none}.vr i{flex:1;height:10px;border-radius:6px;background:var(--bd);overflow:hidden}.vr i u{display:block;height:100%;border-radius:6px;background:linear-gradient(135deg,var(--g1),var(--g2))}.vr b{min-width:44px;text-align:right}
 @media(max-width:560px){.g2{grid-template-columns:1fr}.row{flex-wrap:wrap}}
 </style></head><body>
 <div id="lg" style="max-width:360px;margin:60px auto;padding:14px"><div class="card"><h3>🔐 Admin Login</h3><input id="e" placeholder="Email"><br><br><input id="p" type="password" placeholder="Password"><br><br><div id="cf" style="margin-bottom:10px"></div><button onclick="go()">Login</button></div></div>
 <div id="mf" style="display:none;max-width:360px;margin:60px auto;padding:14px"><div class="card"><h3>🔐 দুই-ধাপ কোড</h3><p>অথেনটিকেটর অ্যাপের ৬ সংখ্যার কোড দিন</p><input id="mc" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"><br><br><button onclick="mfGo()">Verify</button></div></div>
 <div id="ap" style="display:none">
 <header><b>🔥 Viral Video — Admin</b><div style="display:flex;gap:6px"><button class="s" onclick="cycleAT()" title="অ্যাডমিন প্যানেলের থিম বদলান">🎨</button><button class="s" id="mtb" onclick="toggleMt()">🛠️ Maintenance</button><button class="s" onclick="sb.auth.signOut().then(()=>location.reload())">Logout</button></div></header>
-<div class="tabs"><button class="on" onclick="tab('posts',this)">📹 পোস্ট</button><button onclick="tab('users',this)">👥 ইউজার</button><button onclick="tab('adsx',this)">📢 বিজ্ঞাপন</button><button onclick="tab('set',this)">⚙️ সেটিংস</button></div>
+<div class="tabs"><button class="on" onclick="tab('posts',this)">📹 পোস্ট</button><button onclick="tab('vws',this);lv()">📊 ভিউ</button><button onclick="tab('users',this)">👥 ইউজার</button><button onclick="tab('adsx',this)">📢 বিজ্ঞাপন</button><button onclick="tab('set',this)">⚙️ সেটিংস</button></div>
 <main>
 <div class="c on" id="posts"><div class="st"><div><b id="s1">0</b>পোস্ট</div><div><b id="s2">0</b>ভিউ</div><div><b id="s3">0</b>ক্লিক</div></div>
 <button onclick="openF()">＋ নতুন পোস্ট</button><br><br>
@@ -41,6 +42,9 @@ small{color:var(--mu)}.bd{display:inline-block;padding:1px 8px;border-radius:10p
 <div class="g2"><div><label>Direct Video Link</label><input id="dl" placeholder="https://..."></div><div><label>অথবা Telegram Message ID</label><input id="tm" type="number" placeholder="45"></div></div>
 <input type="hidden" id="eid"><br><button class="ok" onclick="savePost()">💾 Save</button> <button class="s" onclick="$('pf').style.display='none'">Cancel</button></div>
 <div class="card" style="padding:4px 14px"><div id="pl"></div></div></div>
+<div class="c" id="vws"><div class="st"><div><b id="v1">0</b>আজকের ভিউ</div><div><b id="v2">0</b>গত ৭ দিন</div><div><b id="v3">0</b>এই মাস</div></div>
+<div class="card"><h3>📅 মাস অনুযায়ী ভিউ</h3><select id="vm" onchange="vmShow()"></select><p style="margin:10px 0 4px">মোট: <b id="vmt" style="color:var(--ac);font-size:18px">0</b></p><div id="vdl"></div></div>
+<div class="card"><h3>🗓️ প্রতি মাসের মোট ভিউ</h3><div id="vml"></div><small style="display:block;margin-top:8px">ভিউ গণনা patch_03 Run করার দিন থেকে শুরু হয়, আগের দিনের হিসাব নেই। দিন গণনা বাংলাদেশ সময় (UTC+6) অনুযায়ী।</small></div></div>
 <div class="c" id="users"><div id="ul"></div></div>
 <div class="c" id="adsx"><div class="card"><h3>নতুন বিজ্ঞাপন (ছবি + লিংক)</h3><div class="g2"><div><label>ধরন</label><select id="ak"><option value="banner">ব্যানার (স্লাইডার)</option><option value="popup">পপ-আপ</option></select></div><div><label>মেয়াদ শেষ (ঐচ্ছিক)</label><input id="ae" type="datetime-local"></div></div>
 <label>📷 ছবি আপলোড অথবা URL</label><input type="file" id="aif" accept="image/*" onchange="up('aif','ai')"><input id="ai" placeholder="Image URL" style="margin-top:6px"><label>ক্লিক লিংক</label><input id="alk"><br><br><button class="ok" onclick="saveAd()">＋ Add</button></div><div class="card" style="padding:4px 14px"><div id="al"></div></div></div>
@@ -77,9 +81,25 @@ async function mfEnroll(){const{data,error}=await sb.auth.mfa.enroll({factorType
 async function mfVerify(){const{error}=await sb.auth.mfa.challengeAndVerify({factorId:MFID,code:$('mfc').value.trim()});if(error)return alert(error.message);alert('✅ MFA চালু হয়েছে। এখন থেকে লগইনে কোড লাগবে।');mfUI()}
 async function chk(){const{data:{session}}=await sb.auth.getSession();if(!session)return;
 const{data:aal}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(aal&&aal.nextLevel==='aal2'&&aal.currentLevel!=='aal2'){$('lg').style.display='none';$('mf').style.display='block';return}const{data}=await sb.from('profiles').select('is_admin').eq('id',session.user.id).maybeSingle();if(!data?.is_admin){await sb.auth.signOut();return alert('এই অ্যাকাউন্ট অ্যাডমিন নয়')}$('lg').style.display='none';$('ap').style.display='block';rst();lp();lu();la();ls()}
+const BDN=['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+let VD=[];const mn=k=>BDN[+k.slice(5)-1]+' '+k.slice(0,4);
+const bdToday=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Dhaka'});
+const addD=(d,n)=>{const x=new Date(d+'T00:00:00Z');x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
+async function lv(){const{data,error}=await sb.from('daily_views').select('day,views').order('day',{ascending:false}).limit(1500);
+if(error){$('vdl').innerHTML='<p>'+esc(error.message)+'<br><small>patch_03_views_pin.sql Run করেছেন কি?</small></p>';return}
+VD=data||[];const t=bdToday(),m=t.slice(0,7),S=(x,y)=>VD.filter(r=>r.day>=x&&r.day<=y).reduce((q,r)=>q+Number(r.views),0);
+$('v1').textContent=S(t,t);$('v2').textContent=S(addD(t,-6),t);$('v3').textContent=S(m+'-01',m+'-31');
+const M={};M[m]=0;VD.forEach(r=>{const k=r.day.slice(0,7);M[k]=(M[k]||0)+Number(r.views)});const ks=Object.keys(M).sort().reverse();
+const cur=$('vm').value;$('vm').innerHTML=ks.map(k=>`<option value="${k}">${mn(k)}</option>`).join('');if(cur&&M[cur]!==undefined)$('vm').value=cur;
+$('vml').innerHTML=ks.map(k=>`<div class="vr"><b style="flex:1;text-align:left">${mn(k)}</b><b>${M[k]}</b></div>`).join('');vmShow()}
+function vmShow(){const k=$('vm').value;if(!k)return;const t=bdToday(),y=+k.slice(0,4),mo=+k.slice(5);let n=new Date(y,mo,0).getDate();if(k===t.slice(0,7))n=+t.slice(8);
+const mp={};VD.forEach(r=>{if(r.day.startsWith(k))mp[r.day]=Number(r.views)});const days=[];for(let d=n;d>=1;d--){const ds=k+'-'+String(d).padStart(2,'0');days.push([ds,mp[ds]||0])}
+const mx=Math.max(1,...days.map(d=>d[1]));$('vmt').textContent=days.reduce((q,d)=>q+d[1],0);
+$('vdl').innerHTML=days.map(([d,v])=>`<div class="vr"><small>${d}</small><i><u style="width:${Math.round(v/mx*100)}%"></u></i><b>${v}</b></div>`).join('')}
+async function pin(id,v){const{error}=await sb.from('posts').update({pinned:!!v,pinned_at:v?new Date().toISOString():null}).eq('id',id);if(error)return alert(error.message+'\n(patch_03_views_pin.sql Run করেছেন কি?)');lp()}
 async function lp(){const{data}=await sb.from('posts').select('*').order('created_at',{ascending:false}).limit(200);P=data||[];
 $('s1').textContent=P.length;$('s2').textContent=P.reduce((a,p)=>a+p.views,0);$('s3').textContent=P.reduce((a,p)=>a+p.clicks,0);
-$('pl').innerHTML=P.map((p,i)=>`<div class="row"><img src="${esc(p.thumb)}"><div class="m"><b>${esc(p.title)}</b><span class="bd">${esc(p.category)}</span><span class="bd">${esc(p.type)}</span><small>👁${Number(p.views)} 🖱${Number(p.clicks)} 📈${Number(p.impressions)}</small></div><div class="a"><button class="s" onclick="openF(${i})">✏️</button><button class="d" onclick="dp(${p.id})">🗑</button></div></div>`).join('')||'<p>কোনো পোস্ট নেই</p>'}
+$('pl').innerHTML=P.map((p,i)=>`<div class="row"><img src="${esc(p.thumb)}"><div class="m"><b>${p.pinned?'📌 ':''}${esc(p.title)}</b><span class="bd">${esc(p.category)}</span><span class="bd">${esc(p.type)}</span><small>👁${Number(p.views)} 🖱${Number(p.clicks)} 📈${Number(p.impressions)}</small></div><div class="a"><button class="${p.pinned?'w':'s'}" title="হোমপেজে পিন" onclick="pin(${p.id},${p.pinned?0:1})">📌</button><button class="s" onclick="openF(${i})">✏️</button><button class="d" onclick="dp(${p.id})">🗑</button></div></div>`).join('')||'<p>কোনো পোস্ট নেই</p>'}
 async function openF(i){const p=i==null?{}:P[i];$('eid').value=p.id||'';$('ft').textContent=p.id?'পোস্ট এডিট':'নতুন পোস্ট';
 $('pt').value=p.title||'';$('pd').value=p.descr||'';$('pg').value=p.tags||'';$('pc').value=p.category||'video';$('py').value=p.type||'normal';$('th').value=p.thumb||'';$('dl').value='';$('tm').value='';prev();
 $('pf').style.display='block';$('pf').scrollIntoView();
